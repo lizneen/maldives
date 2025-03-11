@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saga Crypto Price Forecast</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            font-size: 16px;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 2%;
+        }
+        header {
+            background-color: #2c3e50;
+            color: #ffffff;
+            padding: 2% 4%;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        nav {
+            background-color: #34495e;
+            padding: 1%;
+            text-align: center;
+            border-bottom: 1px solid #2c3e50;
+            position: relative;
+        }
+        .dropdown {
+            display: inline-block;
+            width: 100%;
+        }
+        .dropdown-button {
+            background-color: #4a6278;
+            color: #ffffff;
+            border: none;
+            padding: 2% 4%;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            width: 100%;
+            font-size: 1rem;
+        }
+        .dropdown-button:hover {
+            background-color: #5d788f;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #34495e;
+            width: 90%;
+            max-height: 60vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            border-radius: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .dropdown-content button {
+            color: #ffffff;
+            padding: 2% 3%;
+            text-decoration: none;
+            display: block;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+        .dropdown-content button:hover {
+            background-color: #5d788f;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .content {
+            display: none;
+            padding: 2%;
+            background-color: #252526;
+            margin-top: 2%;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .content.active {
+            display: block;
+        }
+        canvas {
+            max-width: 100%;
+            height: 50vh !important;
+            background-color: #1f1f1f;
+            border-radius: 5px;
+            padding: 1%;
+            touch-action: none; /* Prevent default touch scrolling */
+        }
+        .input-group {
+            margin: 2% 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 1%;
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+        .input-group input, .input-group button, .input-group select {
+            padding: 2%;
+            font-size: 0.9rem;
+            border-radius: 5px;
+            border: 1px solid #3c3c3c;
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+            width: 100%;
+            margin-bottom: 1%;
+        }
+        .input-group button, .reset-zoom {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            padding: 2%;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+        .input-group button:hover, .reset-zoom:hover {
+            background-color: #2980b9;
+        }
+        #error {
+            color: #e74c3c;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        h2 {
+            color: #ffffff;
+            margin-bottom: 2%;
+            font-size: 1.2rem;
+        }
+        #forecastResult, #riskDisclaimer, #ichimokuCalculations {
+            margin-top: 2%;
+            font-size: 0.8rem;
+        }
+        #riskDisclaimer {
+            color: #e74c3c;
+            font-style: italic;
+        }
+        #ichimokuCalculations {
+            white-space: pre-wrap;
+            background-color: #2c2c2c;
+            padding: 2%;
+            border-radius: 5px;
+        }
+        @media (max-width: 600px) {
+            .dropdown-button {
+                padding: 3% 5%;
+                font-size: 1rem;
+            }
+            .dropdown-content {
+                left: 5%;
+                width: 90%;
+                transform: none;
+            }
+            .dropdown-content button {
+                padding: 3% 5%;
+                font-size: 0.9rem;
+            }
+            canvas {
+                height: 40vh !important;
+            }
+            .input-group input, .input-group button, .input-group select {
+                padding: 3%;
+                font-size: 0.8rem;
+            }
+            .reset-zoom {
+                padding: 3%;
+                font-size: 0.8rem;
+            }
+            h2 {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Saga (SAGA) Price Forecast</h1>
+    </header>
+    <nav>
+        <div class="dropdown">
+            <button class="dropdown-button">Menu</button>
+            <div class="dropdown-content">
+                <button onclick="showSection('historical')">Historical Data</button>
+                <button onclick="showSection('future')">Future Price Forecast</button>
+                <button onclick="showSection('ema')">EMA</button>
+                <button onclick="showSection('macd')">MACD</button>
+                <button onclick="showSection('support')">Support/Resistance</button>
+                <button onclick="showSection('stochastic')">Stochastic Oscillator</button>
+                <button onclick="showSection('rsi')">RSI</button>
+                <button onclick="showSection('bollinger')">Bollinger Bands</button>
+                <button onclick="showSection('obv')">OBV</button>
+                <button onclick="showSection('ichimoku')">Ichimoku Cloud</button>
+                <button onclick="showSection('fibonacci')">Fibonacci Retracement</button>
+                <button onclick="showSection('aroon')">Aroon Indicator</button>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div id="error"></div>
+        <div id="historical" class="content active">
+            <h2>Historical Data</h2>
+            <button class="reset-zoom" onclick="resetZoom('historicalChart')">Reset Zoom</button>
+            <canvas id="historicalChart"></canvas>
+        </div>
+        <div id="future" class="content">
+            <h2>Future Price Forecast</h2>
+            <div class="input-group">
+                <label for="forecastDate">Enter Date and Time for Forecast:</label>
+                <input type="datetime-local" id="forecastDate">
+                <button onclick="forecastPrice()">Get Forecast</button>
+            </div>
+            <p id="forecastResult"></p>
+            <p id="riskDisclaimer"></p>
+            <button class="reset-zoom" onclick="resetZoom('futureChart')">Reset Zoom</button>
+            <canvas id="futureChart"></canvas>
+        </div>
+        <div id="ema" class="content">
+            <h2>Exponential Moving Average (EMA)</h2>
+            <button class="reset-zoom" onclick="resetZoom('emaChart')">Reset Zoom</button>
+            <canvas id="emaChart"></canvas>
+        </div>
+        <div id="macd" class="content">
+            <h2>Moving Average Convergence Divergence (MACD)</h2>
+            <button class="reset-zoom" onclick="resetZoom('macdChart')">Reset Zoom</button>
+            <canvas id="macdChart"></canvas>
+        </div>
+        <div id="support" class="content">
+            <h2>Support and Resistance Levels</h2>
+            <button class="reset-zoom" onclick="resetZoom('supportChart')">Reset Zoom</button>
+            <canvas id="supportChart"></canvas>
+        </div>
+        <div id="stochastic" class="content">
+            <h2>Stochastic Oscillator</h2>
+            <button class="reset-zoom" onclick="resetZoom('stochasticChart')">Reset Zoom</button>
+            <canvas id="stochasticChart"></canvas>
+        </div>
+        <div id="rsi" class="content">
+            <h2>Relative Strength Index (RSI)</h2>
+            <button class="reset-zoom" onclick="resetZoom('rsiChart')">Reset Zoom</button>
+            <canvas id="rsiChart"></canvas>
+        </div>
+        <div id="bollinger" class="content">
+            <h2>Bollinger Bands</h2>
+            <button class="reset-zoom" onclick="resetZoom('bollingerChart')">Reset Zoom</button>
+            <canvas id="bollingerChart"></canvas>
+        </div>
+        <div id="obv" class="content">
+            <h2>On-Balance-Volume (OBV)</h2>
+            <button class="reset-zoom" onclick="resetZoom('obvChart')">Reset Zoom</button>
+            <canvas id="obvChart"></canvas>
+        </div>
+        <div id="ichimoku" class="content">
+            <h2>Ichimoku Cloud</h2>
+            <div class="input-group">
+                <label for="ichimokuOption">Select Ichimoku Display:</label>
+                <select id="ichimokuOption" onchange="renderIchimokuChart()">
+                    <option value="kumo">Kumo (Cloud)</option>
+                    <option value="senkou">Senkou Span</option>
+                    <option value="kijun">Kijun Sen (Baseline)</option>
+                </select>
+            </div>
+            <p id="ichimokuCalculations"></p>
+            <button class="reset-zoom" onclick="resetZoom('ichimokuChart')">Reset Zoom</button>
+            <canvas id="ichimokuChart"></canvas>
+        </div>
+        <div id="fibonacci" class="content">
+            <h2>Fibonacci Retracement (Last 30 Days, 3-Day Intervals)</h2>
+            <button class="reset-zoom" onclick="resetZoom('fibonacciChart')">Reset Zoom</button>
+            <canvas id="fibonacciChart"></canvas>
+        </div>
+        <div id="aroon" class="content">
+            <h2>Aroon Indicator</h2>
+            <button class="reset-zoom" onclick="resetZoom('aroonChart')">Reset Zoom</button>
+            <canvas id="aroonChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script>
+        let historicalData = [];
+        let prices = [];
+        let dates = [];
+        let volumes = [];
+        let charts = {};
+
+        // Fetch historical data from CoinGecko API
+        async function fetchData() {
+            try {
+                const url = 'https://api.coingecko.com/api/v3/coins/saga-2/market_chart?vs_currency=usd&days=90';
+                console.log('Fetching data from:', url);
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
+                }
+                const data = await response.json();
+
+                if (!data.prices || !data.total_volumes) {
+                    throw new Error('Invalid data structure from CoinGecko API');
+                }
+
+                historicalData = data.prices.map((point, index) => ({
+                    date: new Date(point[0]).toLocaleDateString(),
+                    price: point[1],
+                    volume: data.total_volumes[index][1]
+                }));
+                prices = historicalData.map(d => d.price);
+                dates = historicalData.map(d => d.date);
+                volumes = historicalData.map(d => d.volume);
+
+                console.log('Parsed Data:', { dates, prices, volumes });
+                document.getElementById('error').innerText = '';
+                setTimeout(renderCharts, 100);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('error').innerText = 'Failed to load data: ' + error.message;
+            }
+        }
+
+        // Show selected section
+        function showSection(sectionId) {
+            document.querySelectorAll('.content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Reset zoom function
+        function resetZoom(chartId) {
+            if (charts[chartId]) {
+                charts[chartId].resetZoom();
+            }
+        }
+
+        // Common zoom options
+        const zoomOptions = {
+            zoom: {
+                wheel: {
+                    enabled: true,
+                    speed: 0.1
+                },
+                pinch: {
+                    enabled: true
+                },
+                mode: 'xy'
+            },
+            pan: {
+                enabled: true,
+                mode: 'xy',
+                threshold: 10 // Minimum distance to start panning
+            }
+        };
+
+        // Render all charts
+        function renderCharts() {
+            if (!prices.length || !dates.length) {
+                document.getElementById('error').innerText = 'No data available to render charts.';
+                return;
+            }
+            console.log('Rendering charts with:', { dates, prices, volumes });
+            renderHistoricalChart();
+            renderFutureChart();
+            renderEMAChart();
+            renderMACDChart();
+            renderSupportChart();
+            renderStochasticChart();
+            renderRSIChart();
+            renderBollingerChart();
+            renderOBVChart();
+            renderIchimokuChart();
+            renderFibonacciChart();
+            renderAroonChart();
+        }
+
+        // Historical Chart
+        function renderHistoricalChart() {
+            const ctx = document.getElementById('historicalChart').getContext('2d');
+            if (charts.historical) charts.historical.destroy();
+            charts.historical = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Price (USDT)',
+                        data: prices.map(p => p.toFixed(10)),
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Volume',
+                        data: volumes,
+                        borderColor: '#95a5a6',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            position: 'left',
+                            beginAtZero: false,
+                            grid: { color: '#3c3c3c' },
+                            ticks: { color: '#b0b0b0', precision: 10 }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: false,
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#b0b0b0' }
+                        },
+                        x: {
+                            grid: { color: '#3c3c3c' },
+                            ticks: { color: '#b0b0b0' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        // Future Price Forecast
+        async function forecastPrice() {
+            const forecastDate = new Date(document.getElementById('forecastDate').value);
+            const daysDiff = (forecastDate - new Date(dates[dates.length - 1])) / (1000 * 60 * 60 * 24);
+            const slope = (prices[prices.length - 1] - prices[0]) / (dates.length - 1);
+            const forecastPrice = prices[prices.length - 1] + slope * daysDiff;
+
+            document.getElementById('forecastResult').innerText = `Forecasted Price on ${forecastDate.toLocaleString()}: ${forecastPrice.toFixed(10)} USDT`;
+            document.getElementById('riskDisclaimer').innerText = `Note: Take risk on your own. This advice may not be optimal due to price volatility and inherent risks in cryptocurrencies.`;
+            renderFutureChart(forecastPrice, forecastDate);
+        }
+
+        function renderFutureChart(forecastPrice, forecastDate) {
+            const ctx = document.getElementById('futureChart').getContext('2d');
+            if (charts.future) charts.future.destroy();
+            const displayDays = 30;
+            const startIndex = Math.max(0, dates.length - displayDays);
+            const futureDates = [...dates.slice(startIndex), forecastDate ? forecastDate.toLocaleDateString() : 'Future'];
+            const futurePrices = [...prices.slice(startIndex), forecastPrice || prices[prices.length - 1]].map(p => p.toFixed(10));
+            charts.future = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: futureDates,
+                    datasets: [{
+                        label: 'Price (USDT)',
+                        data: futurePrices,
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        // EMA Chart
+        function renderEMAChart() {
+            const ema12 = calculateEMA(prices, 12).map(p => p.toFixed(10));
+            const ema26 = calculateEMA(prices, 26).map(p => p.toFixed(10));
+            const ctx = document.getElementById('emaChart').getContext('2d');
+            if (charts.ema) charts.ema.destroy();
+            charts.ema = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Price (USDT)',
+                        data: prices.map(p => p.toFixed(10)),
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'EMA 12',
+                        data: ema12,
+                        borderColor: '#e67e22',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'EMA 26',
+                        data: ema26,
+                        borderColor: '#2ecc71',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        function calculateEMA(data, period) {
+            const k = 2 / (period + 1);
+            let ema = [data[0]];
+            for (let i = 1; i < data.length; i++) {
+                ema.push(data[i] * k + ema[i - 1] * (1 - k));
+            }
+            return ema;
+        }
+
+        // MACD Chart
+        function renderMACDChart() {
+            const ema12 = calculateEMA(prices, 12);
+            const ema26 = calculateEMA(prices, 26);
+            const macd = ema12.map((v, i) => (v - ema26[i]).toFixed(10));
+            const signal = calculateEMA(macd.map(v => parseFloat(v)), 9).map(p => p.toFixed(10));
+            const ctx = document.getElementById('macdChart').getContext('2d');
+            if (charts.macd) charts.macd.destroy();
+            charts.macd = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'MACD',
+                        data: macd,
+                        borderColor: '#9b59b6',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Signal Line',
+                        data: signal,
+                        borderColor: '#e74c3c',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        // Support and Resistance Chart
+        function renderSupportChart() {
+            const support = Math.min(...prices).toFixed(10);
+            const resistance = Math.max(...prices).toFixed(10);
+            const ctx = document.getElementById('supportChart').getContext('2d');
+            if (charts.support) charts.support.destroy();
+            charts.support = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Price (USDT)',
+                        data: prices.map(p => p.toFixed(10)),
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Support',
+                        data: Array(prices.length).fill(support),
+                        borderColor: '#2ecc71',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Resistance',
+                        data: Array(prices.length).fill(resistance),
+                        borderColor: '#e74c3c',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        // Stochastic Oscillator Chart
+        function renderStochasticChart() {
+            const stochastic = calculateStochastic(prices, 14).map(v => v ? v.toFixed(10) : null);
+            const ctx = document.getElementById('stochasticChart').getContext('2d');
+            if (charts.stochastic) charts.stochastic.destroy();
+            charts.stochastic = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Stochastic %K',
+                        data: stochastic,
+                        borderColor: '#f1c40f',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        function calculateStochastic(data, period) {
+            let stochastic = [];
+            for (let i = period - 1; i < data.length; i++) {
+                const slice = data.slice(i - period + 1, i + 1);
+                const highest = Math.max(...slice);
+                const lowest = Math.min(...slice);
+                stochastic.push(((data[i] - lowest) / (highest - lowest)) * 100);
+            }
+            return Array(period - 1).fill(null).concat(stochastic);
+        }
+
+        // RSI Chart
+        function renderRSIChart() {
+            const rsi = calculateRSI(prices, 14).map(v => v ? v.toFixed(10) : null);
+            const ctx = document.getElementById('rsiChart').getContext('2d');
+            if (charts.rsi) charts.rsi.destroy();
+            charts.rsi = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'RSI',
+                        data: rsi,
+                        borderColor: '#1abc9c',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        function calculateRSI(data, period) {
+            let gains = 0, losses = 0, rsi = [];
+            for (let i = 1; i < data.length; i++) {
+                const diff = data[i] - data[i - 1];
+                if (diff > 0) gains += diff; else losses -= diff;
+                if (i >= period) {
+                    const avgGain = gains / period;
+                    const avgLoss = losses / period;
+                    const rs = avgGain / (avgLoss || 1);
+                    rsi.push(100 - (100 / (1 + rs)));
+                    gains = (gains * (period - 1) + (diff > 0 ? diff : 0)) / period;
+                    losses = (losses * (period - 1) + (diff < 0 ? -diff : 0)) / period;
+                } else {
+                    rsi.push(null);
+                }
+            }
+            return rsi;
+        }
+
+        // Bollinger Bands Chart
+        function renderBollingerChart() {
+            const sma = calculateSMA(prices, 20).map(v => v ? v.toFixed(10) : null);
+            const stdDev = calculateStdDev(prices, 20);
+            const upperBand = sma.map((v, i) => v ? (parseFloat(v) + 2 * stdDev[i]).toFixed(10) : null);
+            const lowerBand = sma.map((v, i) => v ? (parseFloat(v) - 2 * stdDev[i]).toFixed(10) : null);
+            const ctx = document.getElementById('bollingerChart').getContext('2d');
+            if (charts.bollinger) charts.bollinger.destroy();
+            charts.bollinger = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Price (USDT)',
+                        data: prices.map(p => p.toFixed(10)),
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Upper Band',
+                        data: upperBand,
+                        borderColor: '#e74c3c',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Lower Band',
+                        data: lowerBand,
+                        borderColor: '#2ecc71',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'SMA',
+                        data: sma,
+                        borderColor: '#e67e22',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        function calculateSMA(data, period) {
+            let sma = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) sma.push(null);
+                else {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    sma.push(slice.reduce((a, b) => a + b) / period);
+                }
+            }
+            return sma;
+        }
+
+        function calculateStdDev(data, period) {
+            let stdDev = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) stdDev.push(null);
+                else {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    const mean = slice.reduce((a, b) => a + b) / period;
+                    const variance = slice.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / period;
+                    stdDev.push(Math.sqrt(variance));
+                }
+            }
+            return stdDev;
+        }
+
+        // OBV Chart
+        function renderOBVChart() {
+            const obv = calculateOBV();
+            const ctx = document.getElementById('obvChart').getContext('2d');
+            if (charts.obv) charts.obv.destroy();
+            charts.obv = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'OBV',
+                        data: obv,
+                        borderColor: '#9b59b6',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        function calculateOBV() {
+            let obv = [0];
+            for (let i = 1; i < prices.length; i++) {
+                if (prices[i] > prices[i - 1]) {
+                    obv.push(obv[i - 1] + volumes[i]);
+                } else if (prices[i] < prices[i - 1]) {
+                    obv.push(obv[i - 1] - volumes[i]);
+                } else {
+                    obv.push(obv[i - 1]);
+                }
+            }
+            return obv;
+        }
+
+        // Ichimoku Cloud Chart
+        function renderIchimokuChart() {
+            const ctx = document.getElementById('ichimokuChart').getContext('2d');
+            if (charts.ichimoku) charts.ichimoku.destroy();
+
+            const tenkanSen = calculateTenkanSen(prices, 9);
+            const kijunSen = calculateKijunSen(prices, 26);
+            const senkouSpanA = calculateSenkouSpanA(tenkanSen, kijunSen);
+            const senkouSpanB = calculateSenkouSpanB(prices, 52);
+            const option = document.getElementById('ichimokuOption').value;
+
+            document.getElementById('ichimokuChart').style.display = 'block';
+            document.getElementById('ichimokuCalculations').style.display = 'none';
+
+            if (option === 'kumo') {
+                const kumoData = dates.map((_, i) => ({
+                    x: i,
+                    y: senkouSpanA[i] > senkouSpanB[i] ? senkouSpanA[i] : senkouSpanB[i],
+                    y0: senkouSpanA[i] > senkouSpanB[i] ? senkouSpanB[i] : senkouSpanA[i]
+                }));
+                charts.ichimoku = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Price (USDT)',
+                            data: prices.map(p => p.toFixed(10)),
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
+                        }, {
+                            label: 'Kumo (Cloud)',
+                            data: kumoData,
+                            fill: 'origin',
+                            backgroundColor: senkouSpanA.map((a, i) => a > senkouSpanB[i] ? 'rgba(46, 204, 113, 0.3)' : 'rgba(231, 76, 60, 0.3)'),
+                            borderColor: 'transparent',
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                            x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                            tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                            zoom: zoomOptions
+                        }
+                    }
+                });
+            } else if (option === 'senkou') {
+                charts.ichimoku = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Price (USDT)',
+                            data: prices.map(p => p.toFixed(10)),
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
+                        }, {
+                            label: 'Senkou Span A',
+                            data: senkouSpanA.map(v => v ? v.toFixed(10) : null),
+                            borderColor: '#e67e22',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: false
+                        }, {
+                            label: 'Senkou Span B',
+                            data: senkouSpanB.map(v => v ? v.toFixed(10) : null),
+                            borderColor: '#2ecc71',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                            x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                            tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                            zoom: zoomOptions
+                        }
+                    }
+                });
+            } else if (option === 'kijun') {
+                document.getElementById('ichimokuChart').style.display = 'none';
+                document.getElementById('ichimokuCalculations').innerText = `Kijun Sen (Baseline) Calculations (Last 5 periods):\n${kijunSen.slice(-5).map((v, i) => `${dates[dates.length - 5 + i]}: ${v.toFixed(10)}`).join('\n')}`;
+                document.getElementById('ichimokuCalculations').style.display = 'block';
+                return;
+            }
+        }
+
+        function calculateTenkanSen(data, period) {
+            let tenkan = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) tenkan.push(null);
+                else {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    tenkan.push((Math.max(...slice) + Math.min(...slice)) / 2);
+                }
+            }
+            return tenkan;
+        }
+
+        function calculateKijunSen(data, period) {
+            let kijun = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) kijun.push(null);
+                else {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    kijun.push((Math.max(...slice) + Math.min(...slice)) / 2);
+                }
+            }
+            return kijun;
+        }
+
+        function calculateSenkouSpanA(tenkan, kijun) {
+            return tenkan.map((t, i) => (t && kijun[i] ? ((t + kijun[i]) / 2) : null));
+        }
+
+        function calculateSenkouSpanB(data, period) {
+            let spanB = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) spanB.push(null);
+                else {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    spanB.push((Math.max(...slice) + Math.min(...slice)) / 2);
+                }
+            }
+            return spanB;
+        }
+
+        // Fibonacci Retracement Chart (Last 30 Days, 3-Day Intervals)
+        function renderFibonacciChart() {
+            const ctx = document.getElementById('fibonacciChart').getContext('2d');
+            if (charts.fibonacci) charts.fibonacci.destroy();
+
+            const daysToShow = 30;
+            const startIndex = Math.max(0, prices.length - daysToShow);
+            const recentPrices = prices.slice(startIndex);
+            const recentDates = dates.slice(startIndex);
+
+            const interval = 3;
+            const fibDates = [];
+            const fibPrices = [];
+            for (let i = 0; i < recentDates.length; i += interval) {
+                fibDates.push(recentDates[i]);
+                fibPrices.push(recentPrices[i]);
+            }
+
+            const recentHigh = Math.max(...recentPrices);
+            const recentLow = Math.min(...recentPrices);
+            const fibLevels = calculateFibonacciLevels(recentHigh, recentLow);
+
+            charts.fibonacci = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fibDates,
+                    datasets: [{
+                        label: 'Price (USDT)',
+                        data: fibPrices.map(p => p.toFixed(10)),
+                        borderColor: '#3498db',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Fib 23.6%',
+                        data: Array(fibDates.length).fill(fibLevels[0].toFixed(10)),
+                        borderColor: '#e67e22',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Fib 38.2%',
+                        data: Array(fibDates.length).fill(fibLevels[1].toFixed(10)),
+                        borderColor: '#2ecc71',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Fib 61.8%',
+                        data: Array(fibDates.length).fill(fibLevels[2].toFixed(10)),
+                        borderColor: '#e74c3c',
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0', precision: 10 } },
+                        x: { grid: { color: '#3c3c3c' }, ticks: { color: '#b0b0b0' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        function calculateFibonacciLevels(high, low) {
+            const diff = high - low;
+            return [
+                high - 0.236 * diff, // 23.6%
+                high - 0.382 * diff, // 38.2%
+                high - 0.618 * diff  // 61.8%
+            ];
+        }
+
+        // Aroon Indicator Chart
+        function renderAroonChart() {
+            const ctx = document.getElementById('aroonChart').getContext('2d');
+            if (charts.aroon) charts.aroon.destroy();
+
+            const { aroonUp, aroonDown } = calculateAroon(prices, 14);
+
+            const startIndex = 13;
+            const trimmedDates = dates.slice(startIndex);
+            const trimmedAroonUp = aroonUp.slice(startIndex);
+            const trimmedAroonDown = aroonDown.slice(startIndex);
+
+            charts.aroon = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trimmedDates,
+                    datasets: [{
+                        label: 'Aroon Up',
+                        data: trimmedAroonUp.map(v => v.toFixed(2)),
+                        borderColor: '#00C805',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }, {
+                        label: 'Aroon Down',
+                        data: trimmedAroonDown.map(v => v.toFixed(2)),
+                        borderColor: '#FF9800',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: { 
+                                color: '#3c3c3c',
+                                borderDash: [5, 5],
+                                lineWidth: ctx => ctx.tick && (ctx.tick.value === 30 || ctx.tick.value === 70) ? 1 : 0.5
+                            },
+                            ticks: { 
+                                color: '#b0b0b0', 
+                                stepSize: 25 
+                            }
+                        },
+                        x: {
+                            grid: { color: '#3c3c3c' },
+                            ticks: { 
+                                color: '#b0b0b0', 
+                                maxTicksLimit: 10 
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e0e0e0', font: { size: 14 } } },
+                        tooltip: { backgroundColor: '#2c2c2c', titleColor: '#e0e0e0', bodyColor: '#e0e0e0' },
+                        zoom: zoomOptions
+                    }
+                }
+            });
+        }
+
+        function calculateAroon(data, period) {
+            let aroonUp = [];
+            let aroonDown = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    aroonUp.push(null);
+                    aroonDown.push(null);
+                } else {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    const high = Math.max(...slice);
+                    const low = Math.min(...slice);
+                    const highIndex = slice.lastIndexOf(high);
+                    const lowIndex = slice.lastIndexOf(low);
+                    const upValue = 100 * (period - 1 - highIndex) / (period - 1);
+                    const downValue = 100 * (period - 1 - lowIndex) / (period - 1);
+                    aroonUp.push(upValue);
+                    aroonDown.push(downValue);
+                }
+            }
+            return { aroonUp, aroonDown };
+        }
+
+        // Initialize the app
+        fetchData();
+    </script>
+</body>
+</html>
